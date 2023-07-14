@@ -1,0 +1,28 @@
+name: Validate
+on: push
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v3
+  - uses: hashicorp/setup-terraform@v2
+  
+  - name: Terraform Fmt
+    id: fmt
+    run: run: terraform fmt -check
+    continue-on-error: true
+
+  - name: Terraform Init
+    id: init
+    run: terraform init
+
+  - name: Terraform Validate
+    id: validate
+    run: terraform validate -no-color
+
+  - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          output_format: cli
+          directory: terraform/
