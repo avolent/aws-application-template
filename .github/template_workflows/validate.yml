@@ -1,18 +1,25 @@
-name: Validate
+name: Validate Infrastructure
 on: 
   pull_request:
     paths: 
       - infrastructure/**
-      - .github/workflows/**
 permissions:
   id-token: write
   contents: read
   issues: write
   pull-requests: write
 jobs:
-  validate:
+  validate-infra:
     runs-on: ubuntu-latest
     steps:
+    - name: Configure AWS Credentials
+      id: creds
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} 
+        aws-region: ${{ secrets.AWS_REGION }}
+
     - uses: actions/checkout@v3
     - uses: hashicorp/setup-terraform@v2
     
@@ -20,6 +27,14 @@ jobs:
       id: fmt
       run: make fmt
       continue-on-error: true
+
+    - name: Terraform Init
+      id: init
+      run: make init
+
+    - name: Terraform Validate
+      id: validate
+      run: make validate
 
     - name: Checkov GitHub Action
       id: checkov
@@ -30,6 +45,11 @@ jobs:
         directory: infrastructure/
       continue-on-error: true
 
+    - name: Terraform Plan
+      id: plan
+      run: make plan
+      continue-on-error: true
+      
     - name: Update PR Comment
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
@@ -50,8 +70,27 @@ jobs:
     
           // 2. Prepare format of the comment
           const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-          #### Checkov 🔎\`${{ steps.checkov.outcome }}\` 
+          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+          #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+          <details><summary>Validation Output</summary>
+    
+          \`\`\`\n
+          ${{ steps.validate.outputs.stdout }}
+          \`\`\`
+    
+          </details>
 
+          #### Checkov 🔎\`${{ steps.checkov.outcome }}\` 
+          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+    
+          <details><summary>Show Plan</summary>
+    
+          \`\`\`\n
+          ${process.env.PLAN}
+          \`\`\`
+    
+          </details>
+    
           *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
     
           // 3. If we have a comment, update it, otherwise create a new one
@@ -72,5 +111,5 @@ jobs:
           }
     - name: Validations Result
       id: results
-      if: ${{ steps.fmt.outcome != 'success' || steps.checkov.outcome != 'success' }}
+      if: ${{ steps.fmt.outcome != 'success' || steps.init.outcome != 'success' || steps.validate.outcome != 'success' || steps.checkov.outcome != 'success' || steps.plan.outcome != 'success' }}
       run: echo "Validation failure" && exit 1
