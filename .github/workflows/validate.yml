@@ -1,9 +1,13 @@
 name: Validate Infrastructure
 on: 
-  push:
+  pull_request:
     paths: 
       - infrastructure/**
-
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+  pull-requests: write
 jobs:
   validate-infra:
     runs-on: ubuntu-latest
@@ -13,20 +17,59 @@ jobs:
     
     - name: Terraform Fmt
       id: fmt
-      run: terraform fmt -check
+      run: make fmt
       continue-on-error: true
-
-    - name: Terraform Init
-      id: init
-      run: terraform init
-
-    - name: Terraform Validate
-      id: validate
-      run: terraform validate -no-color
 
     - name: Checkov GitHub Action
       id: checkov
       uses: bridgecrewio/checkov-action@v12
       with:
         output_format: cli
+        output_file_path: console
         directory: infrastructure/
+      continue-on-error: true
+
+    - name: Update PR Comment
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          })
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
+          })
+    
+          // 2. Prepare format of the comment
+          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+          #### Checkov 🔎\`${{ steps.checkov.outcome }}\` 
+
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+    
+          // 3. If we have a comment, update it, otherwise create a new one
+          if (botComment) {
+            github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: output
+            })
+          } else {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+          }
+    - name: Validations Result
+      id: results
+      if: ${{ steps.fmt.outcome != 'success' || steps.checkov.outcome != 'success' }}
+      run: echo "Validation failure" && exit 1
