@@ -1,0 +1,20 @@
+name: pr
+on: 
+  pull_request:
+    paths: 
+      - infrastructure/**
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+  pull-requests: write
+  
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
+
+  cost:
+    uses: ./.github/workflows/cost.yml
+    needs: [validate]
+    secrets: inherit
