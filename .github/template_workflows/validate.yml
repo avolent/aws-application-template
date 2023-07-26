@@ -1,8 +1,6 @@
 name: Validate Infrastructure
-on: 
-  pull_request:
-    paths: 
-      - infrastructure/**
+on:
+  workflow_call:
 permissions:
   id-token: write
   contents: read
