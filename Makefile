@@ -1,4 +1,4 @@
-STATE_FILE_BUCKET ?= avolent-terraform-state
+STATE_FILE_BUCKET ?= 
 GIT_REPO ?= $(shell basename `git rev-parse --show-toplevel`)
 
 # Terraform
@@ -8,7 +8,7 @@ fmt:
 init:
 	cd infrastructure/ && terraform init \
 		-backend-config="bucket=${STATE_FILE_BUCKET}" \
-		-backend-config="key=${GIT_REPO}.tfstate" \
+		-backend-config="key=${GIT_REPO}-${APP_ENV}.tfstate" \
 		-backend-config="region=${AWS_REGION}"
 
 validate:
@@ -19,7 +19,8 @@ plan:
 		-no-color \
 		-out=tfplan \
 		-input=false \
-		-var="git_repo=${GIT_REPO}"
+		-var="git_repo=${GIT_REPO}" \
+		-var="app_env=${APP_ENV}"
 
 apply:
 	cd infrastructure/ && terraform apply \

@@ -9,14 +9,13 @@ variable "git_repo" {
   description = "The current git repository"
 }
 
-variable "project_name" {
+variable "app_name" {
   type        = string
-  description = "Your project name, it will be used for naming resources"
-  default     = "application_name"
+  description = "Your application name, it will be used for naming resources"
+  default     = "application"
 }
 
-variable "environment" {
+variable "app_env" {
   type        = string
   description = "Deployment Environment"
-  default     = "dev"
 }
