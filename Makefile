@@ -29,3 +29,19 @@ apply:
 		-auto-approve \
 		"tfplan"
 
+plan_destroy:
+	cd infrastructure/ && terraform plan \
+		-destroy \
+		-no-color \
+		-out=tfplan_destroy \
+		-input=false \
+		-var="git_repo=${GIT_REPO}" \
+		-var="app_env=${APP_ENV}"
+
+apply_destroy:
+	cd infrastructure/ && terraform apply \
+		-no-color \
+		-input=false \
+		-auto-approve \
+		"tfplan_destroy"
+
