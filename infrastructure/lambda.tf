@@ -33,14 +33,21 @@ data "archive_file" "lambda" {
 }
 
 resource "aws_lambda_function" "api_lambda" {
+  #checkov:skip=CKV_AWS_117:Do not want to implement VPC access yet
+  #checkov:skip=CKV_AWS_116:Do not want to implement DLQ yet
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
   filename      = "lambda_function_payload.zip"
   function_name = "${var.app_name}_api"
   role          = aws_iam_role.lambda.arn
   handler       = "entrypoint.lambda_handler"
+  reserved_concurrent_executions = 10
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   runtime = "python3.10"
+
+  tracing_config {
+    mode = "Active"
+  }
 }
