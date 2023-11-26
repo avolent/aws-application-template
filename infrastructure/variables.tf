@@ -19,3 +19,9 @@ variable "app_env" {
   type        = string
   description = "Deployment Environment"
 }
+
+variable "app_version" {
+  type        = string
+  description = "Application Version, must follow semantic versioning."
+  default     = "0.0.1"
+}
