@@ -50,7 +50,7 @@ resource "aws_api_gateway_resource" "api" {
 
 resource "aws_api_gateway_method" "api" {
   #checkov:skip=CKV_AWS_59:Authoriser not required yet
-  #checkov:skip=CKV_AWS_53:Will be enabled in the future
+  #checkov:skip=CKV2_AWS_53:Will be enabled in the future
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.api.id
   http_method   = "ANY"
