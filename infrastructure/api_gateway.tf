@@ -14,29 +14,9 @@ data "aws_iam_policy_document" "api_assume_role" {
 resource "aws_iam_role" "cloudwatch" {
   name               = "api_gateway_cloudwatch_global"
   assume_role_policy = data.aws_iam_policy_document.api_assume_role.json
-}
-
-data "aws_iam_policy_document" "cloudwatch" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-      "logs:PutLogEvents",
-      "logs:GetLogEvents",
-      "logs:FilterLogEvents",
-    ]
-
-    resources = ["*"]
-  }
-}
-resource "aws_iam_role_policy" "cloudwatch" {
-  name   = "default"
-  role   = aws_iam_role.cloudwatch.id
-  policy = data.aws_iam_policy_document.cloudwatch.json
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+  ]
 }
 
 resource "aws_api_gateway_account" "api" {
@@ -44,7 +24,10 @@ resource "aws_api_gateway_account" "api" {
 }
 
 resource "aws_cloudwatch_log_group" "api" {
-  name = "${var.app_name}-api-${var.app_env}"
+  #checkov:skip=CKV_AWS_338:Log retention doesnt need to be 1 year yet
+  name              = "${var.app_name}-api-${var.app_env}"
+  retention_in_days = 14
+  kms_key_id        = data.aws_kms_key.default.arn
 }
 
 resource "aws_api_gateway_rest_api" "api" {
@@ -74,6 +57,8 @@ resource "aws_api_gateway_method" "api" {
 }
 
 resource "aws_api_gateway_method_settings" "all" {
+  #checkov:skip=CKV_AWS_308:Disable the need caching encryption
+  #checkov:skip=CKV_AWS_225:Disable the need caching
   rest_api_id = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.api.stage_name
   method_path = "*/*"

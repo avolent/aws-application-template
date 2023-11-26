@@ -1,4 +1,6 @@
-STATE_FILE_BUCKET ?= 
+STATE_FILE_BUCKET ?= avolent-terraform-state
+AWS_REGION ?= ap-southeast-2
+APP_ENV ?= dev
 GIT_REPO ?= $(shell basename `git rev-parse --show-toplevel`)
 
 # Terraform
@@ -45,3 +47,5 @@ apply_destroy:
 		-auto-approve \
 		"tfplan_destroy"
 
+checkov:
+	cd infrastructure/ && checkov -d .
