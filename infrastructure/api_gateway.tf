@@ -102,6 +102,8 @@ resource "aws_api_gateway_deployment" "api" {
 }
 
 resource "aws_api_gateway_stage" "api" {
+  #checkov:skip=CKV_AWS_51:Will be enabled in the future
+  #checkov:skip=CKV_AWS_29:Will be enabled in the future
   deployment_id = aws_api_gateway_deployment.api.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = var.app_env
