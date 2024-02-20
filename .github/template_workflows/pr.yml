@@ -1,11 +1,12 @@
 name: pr
 on: 
   pull_request:
-    paths: 
-      - infrastructure/**
+    paths-ignore:
+    - infrastructure/README.md
+
 permissions:
   id-token: write
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
   
@@ -17,4 +18,9 @@ jobs:
   cost:
     uses: ./.github/workflows/cost.yml
     needs: [validate]
+    secrets: inherit
+
+  tfdocs:
+    uses: ./.github/workflows/tfdocs.yml
+    needs: [cost]
     secrets: inherit

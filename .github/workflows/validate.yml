@@ -1,9 +1,6 @@
 name: Validate
 on: 
   pull_request:
-    paths: 
-      - infrastructure/**
-      - .github/workflows/**
 permissions:
   id-token: write
   contents: read
