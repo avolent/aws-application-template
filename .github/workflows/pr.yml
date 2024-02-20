@@ -15,12 +15,7 @@ jobs:
     uses: ./.github/workflows/validate.yml
     secrets: inherit
 
-  cost:
-    uses: ./.github/workflows/cost.yml
-    needs: [validate]
-    secrets: inherit
-
   tfdocs:
     uses: ./.github/workflows/tfdocs.yml
-    needs: [cost]
+    needs: [validate]
     secrets: inherit
